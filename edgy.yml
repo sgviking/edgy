@@ -32,6 +32,13 @@
         line: '@load file-extraction'
       notify: Deploy Bro
 
+    - name: Change path to save bro extracted files
+      lineinfile:
+        dest: /opt/bro/share/bro/file-extraction/main.bro
+        regexp: "^\tconst path: string = \""
+        line: "\tconst path: string = \"/nsm/bro/extracted/\" &redef;"
+      notify: Deploy Bro
+
     - name: Enable file extraction of common malware types
       lineinfile:
         dest: /opt/bro/share/bro/file-extraction/plugins/__load__.bro
