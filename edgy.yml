@@ -1,0 +1,44 @@
+---
+- name: Configure 'edgy' SecurityOnion server
+  hosts: securityonion
+  become: true
+  gather_facts: true
+  tasks:
+    # This makes it so that the git repo is downloaded everytime, which is 
+    # undesirable. Without this if the user specified file extraction when
+    # installing SecurityOnion then this directory will exist and cause the
+    # the git clone of the new file extraction scripts to fail.  This is the
+    # hack to make it work until I find a better way.
+    #
+    # Long term this will need to be fixed as it causes not only the repo to be
+    # downloaded everytime this playbook is run, but it also causes a
+    # bro deploy everytime which interupts processing uncessary and is a 
+    # time intensive process.
+    - name: Remove existing file extraction scripts
+      file:
+        dest: /opt/bro/share/bro/file-extraction
+        state: absent
+
+    - name: Download Bro file extraction scripts
+      git:
+        repo: https://github.com/hosom/bro-file-extraction
+        dest: /opt/bro/share/bro/file-extraction
+      notify: Deploy Bro
+
+    - name: Add bro file-extraction script to local.bro
+      lineinfile:
+        dest: /opt/bro/share/bro/site/local.bro
+        regexp: '^@load file-extraction'
+        line: '@load file-extraction'
+      notify: Deploy Bro
+
+    - name: Enable file extraction of common malware types
+      lineinfile:
+        dest: /opt/bro/share/bro/file-extraction/plugins/__load__.bro
+        regexp: '^#@load file-extraction/plugins/extract-common-exploit-types'
+        line: '@load file-extraction/plugins/extract-common-exploit-types'
+      notify: Deploy Bro
+
+  handlers:
+    - name: Deploy Bro
+      shell: broctl deploy
