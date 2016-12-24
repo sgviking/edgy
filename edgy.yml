@@ -4,6 +4,14 @@
   become: true
   gather_facts: true
   tasks:
+    - name: Change boot mode to text mode (init 3 instead of init 5)
+      lineinfile:
+        dest: /etc/default/grub
+        regexp: "^GRUB_CMDLINE_LINUX_DEFAULT="
+        line: "GRUB_CMDLINE_LINUX_DEFAULT=\"text\""
+      tags: [ "setup" ]
+      notify: Update Grub
+
     # This makes it so that the git repo is downloaded everytime, which is 
     # undesirable. Without this if the user specified file extraction when
     # installing SecurityOnion then this directory will exist and cause the
@@ -49,3 +57,6 @@
   handlers:
     - name: Deploy Bro
       shell: broctl deploy
+
+    - name: Update Grub
+      shell: update-grub
